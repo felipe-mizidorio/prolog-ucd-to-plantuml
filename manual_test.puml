@@ -1,0 +1,14 @@
+@startuml
+left to right direction
+
+actor "User" as none
+
+package "TestPackage" {
+    usecase "Login" as none
+    usecase "Register" as none
+}
+
+"User" -- "Login"
+"User" -- "Register"
+
+@enduml

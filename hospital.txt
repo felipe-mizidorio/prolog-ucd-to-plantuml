@@ -1,0 +1,26 @@
+module("Hospital Reception"){
+    case 'Schedule Patient Appointment',
+    case 'Schedule Patient Hospital Admission' as SPHA,
+    case 'Patient Registration' as PR,
+    case 'Patient Hospital Admission' as PHA,
+    case 'File Insurance Forms / Claims' as FIFC,
+    case 'File Medical Reports' as FMR,
+    case 'Outpatient Hospital Admission' as OHA,
+    case 'Inpatient Hospital Admission' as IHA,
+    case 'Bed Allotment'
+}
+
+actor 'Receptionist';
+
+'Receptionist' -- 'Schedule Patient Appointment'
+'Receptionist' -- SPHA
+'Receptionist' -- PR
+'Receptionist' -- PHA
+'Receptionist' -- FIFC
+'Receptionist' -- FMR
+PR -e> SPHA
+PR -e> 'Schedule Patient Appointment'
+PHA -i> PR
+IHA -i> 'Bed Allotment'
+OHA ->> PHA
+IHA ->> PHA

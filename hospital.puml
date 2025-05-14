@@ -1,0 +1,31 @@
+@startuml
+left to right direction
+
+actor "Receptionist"
+
+package "Hospital Reception" {
+    usecase "Schedule Patient Appointment"
+    usecase "Schedule Patient Hospital Admission" as SPHA
+    usecase "Patient Registration" as PR
+    usecase "Patient Hospital Admission" as PHA
+    usecase "File Insurance Forms / Claims" as FIFC
+    usecase "File Medical Reports" as FMR
+    usecase "Outpatient Hospital Admission" as OHA
+    usecase "Inpatient Hospital Admission" as IHA
+    usecase "Bed Allotment"
+}
+
+"Receptionist" -- "Schedule Patient Appointment"
+"Receptionist" -- SPHA
+"Receptionist" -- PR
+"Receptionist" -- PHA
+"Receptionist" -- FIFC
+"Receptionist" -- FMR
+PR ..> SPHA : <<extend>>
+PR ..> "Schedule Patient Appointment" : <<extend>>
+PHA ..> PR : <<include>>
+IHA ..> "Bed Allotment" : <<include>>
+OHA ..|> PHA
+IHA ..|> PHA
+
+@enduml
