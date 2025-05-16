@@ -9,6 +9,7 @@
     insert_package/1,
     insert_usecase/3,
     insert_actor/2,
+    insert_actor/3,
     insert_relation/3,
     validate_relation/3,
     count_usecases/2,
@@ -19,9 +20,10 @@
 :- use_module(library(dcg/basics)).
 :- dynamic
     uc_module/1,
-    uc_case/3,    % uc_case(Package, Name, Alias)
-    uc_actor/2,   % uc_actor(Name, Alias)
-    uc_rel/3.     % uc_rel(Type, From, To)
+    uc_case/3,          % uc_case(Package, Name, Alias)
+    uc_actor/2,         % uc_actor(Name, Alias) - global actor
+    uc_actor/3,         % uc_actor(Package, Name, Alias) - actor in package
+    uc_rel/3.           % uc_rel(Type, From, To)
 
 %% --------------------------------------------------------------------
 %% 1. Insertion Predicates
@@ -37,21 +39,45 @@ insert_usecase(Package, Name, Alias) :-
     uc_module(Package),
     assertz(uc_case(Package, Name, Alias)).
 
-% Add an actor
+% Add an actor (global)
 insert_actor(Name, Alias) :-
     assertz(uc_actor(Name, Alias)).
 
-% Add a relation 
+% Add an actor to a specific package
+insert_actor(Package, Name, Alias) :-
+    uc_module(Package),
+    assertz(uc_actor(Package, Name, Alias)).
+
+% Add a relation with validation
 insert_relation(Type, From, To) :-
+    validate_relation(From, To, Type), % Validate before inserting
+    !,
     assertz(uc_rel(Type, From, To)).
+insert_relation(Type, From, To) :-
+    format('ERROR: Invalid relation ~w between ~w and ~w~n', [Type, From, To]),
+    fail.
 
 %% --------------------------------------------------------------------
 %% 2. Validation Predicate
 %% --------------------------------------------------------------------
 
-% Validate relation - checks both entities exist
+% Improved validation - checks that both entities exist
 validate_relation(From, To, Type) :-
-    atom(From), atom(To), Type \= ''.
+    atom(From), atom(To), Type \= '',
+    % Check if From entity exists (either as actor or use case)
+    (entity_exists(From) -> true ; 
+        format('ERROR: Entity "~w" not declared~n', [From]), fail),
+    % Check if To entity exists (either as actor or use case)
+    (entity_exists(To) -> true ; 
+        format('ERROR: Entity "~w" not declared~n', [To]), fail).
+
+% Helper predicate to check if an entity exists
+entity_exists(Entity) :-
+    uc_actor(Entity, _);              % Global actor with name matching Entity
+    uc_actor(_, Entity, _);           % Actor in package with name matching Entity
+    uc_actor(_, _, Entity);           % Actor in package with alias matching Entity
+    uc_case(_, Entity, _);            % Use case with name matching Entity
+    uc_case(_, _, Entity).            % Use case with alias matching Entity
 
 %% --------------------------------------------------------------------
 %% 3. Counting Use Cases in a Package
@@ -71,6 +97,7 @@ process_file(In, Out) :-
     retractall(uc_module(_)),
     retractall(uc_case(_,_,_)),
     retractall(uc_actor(_,_)),
+    retractall(uc_actor(_,_,_)),
     retractall(uc_rel(_,_,_)),
     read_file_to_string(In, Text, []),
     string_codes(Text, Codes),
@@ -233,8 +260,14 @@ is_quoted(Entity, QuotedEntity) :-
         % It's a defined alias for a use case - don't quote it
         QuotedEntity = Entity
     ;
-        % Not a defined alias - quote it
-        format(atom(QuotedEntity), '"~w"', [Entity])
+        % Check if it's an actor with a defined alias
+        (uc_actor(Name, Entity), Name \= Entity ->
+            % It's a defined alias for an actor - don't quote it
+            QuotedEntity = Entity
+        ;
+            % Not a defined alias - quote it
+            format(atom(QuotedEntity), '"~w"', [Entity])
+        )
     ).
 
 emit_footer(S) :- 

@@ -27,5 +27,6 @@ PHA ..> PR : <<include>>
 IHA ..> "Bed Allotment" : <<include>>
 OHA ..|> PHA
 IHA ..|> PHA
+IHA ..|> PHA
 
 @enduml
